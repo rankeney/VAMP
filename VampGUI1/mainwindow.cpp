@@ -3716,85 +3716,86 @@ void MainWindow::on_action_Generate_vamp_output_c_triggered()
         out << "    _vamp_mcdc_stack_overflow[index] = exprNum + 1;\n";
         out << "  }\n\n  return result;\n";
         out << "}\n\n";
-        out << "void _vamp_output()\n{\n";
-        out << "  int i, j, cnt;\n\n";
-        out << "  for (i = 0; i < " << fileList.size() << "; ++i)\n";
-        out << "  {\n";
-        out << "    for (j = 0; _vamp_filenames[i][j]; ++j)\n";
-        out << "      _vamp_send(_vamp_filenames[i][j]);\n";
-        out << "    _vamp_send(0);\n\n";
-
-        // Insert instrumentation data output routine
-        int opts = (vcData.doStmtSingle ? DO_STATEMENT_SINGLE : 0) |
-                             (vcData.doStmtCount ? DO_STATEMENT_COUNT : 0) |
-                             (vcData.doBranch ? DO_BRANCH : 0) |
-                             (vcData.doMCDC ? DO_MCDC : 0) |
-                             (vcData.doCC ? DO_CONDITION : 0);
-        //char optsStr[8];
-        //sprintf(optsStr, "%#02x", opts);
-        out << "    _vamp_send(" << opts << ");\n\n";
-        if (vcData.doStmtSingle || vcData.doBranch)
-        {
-            out << "    cnt = _vamp_stmt_index[i + 1] - _vamp_stmt_index[i];\n";
-            // Output instrumented statement data
-            out << "    _vamp_send(cnt >> 8);\n";
-            out << "    _vamp_send(cnt & 0xff);\n";
-            out << "    for (j = _vamp_stmt_index[i]; j < _vamp_stmt_index[i + 1]; ++j)\n";
-            out << "      _vamp_send(_vamp_stmt_array[j]);\n";
-        }
-        else
-        // FIXME: Is " || vcData.doBranch" needed here?
-        if (vcData.doStmtCount)
-        {
-            out << "    cnt = _vamp_stmt_index[i + 1] - _vamp_stmt_index[i];\n";
-            // Output instrumented statement data
-            out << "    _vamp_send(cnt >> 8);\n";
-            out << "    _vamp_send(cnt & 0xff);\n";
-            out << "    for (j = _vamp_stmt_index[i]; j < _vamp_stmt_index[i + 1]; ++j)\n";
-            out << "    {\n";
-            out << "      _vamp_send(_vamp_stmt_array[j] >> 24);\n";
-            out << "      _vamp_send(_vamp_stmt_array[j] >> 16) & 0xff);\n";
-            out << "      _vamp_send(_vamp_stmt_array[j] >> 8) & 0xff);\n";
-            out << "      _vamp_send(_vamp_stmt_array[j] & 0xff);\n";
-            out << "    }\n";
-        }
-
-        if (vcData.doBranch)
-        {
-            out << "    cnt = _vamp_branch_index[i + 1] - _vamp_branch_index[i];\n";
-            // Output instrumented branch data
-            out << "    _vamp_send(cnt >> 8);\n";
-            out << "    _vamp_send(cnt & 0xff);\n";
-            out << "    for (j = _vamp_branch_index[i]; j < _vamp_branch_index[i + 1]; ++j)\n";
-            out << "      _vamp_send(_vamp_branch_array[j]);\n";
-        }
-
-        if (vcData.doCC)
-        {
-            out << "    cnt = _vamp_cond_index[i + 1] - _vamp_cond_index[i];\n";
-            // Output instrumented condition data
-            out << "    _vamp_send(cnt >> 8);\n";
-            out << "    _vamp_send(cnt & 0xff);\n";
-            out << "    for (j = _vamp_cond_index[i]; j < _vamp_cond_index[i + 1]; ++j)\n";
-            out << "      _vamp_send(_vamp_cond_array[j]);\n";
-        }
-
-        if (vcData.doMCDC)
-        {
-//          out << "    cnt = _vamp_mcdc_index[i + 1] - _vamp_mcdc_index[i];\n";
-            out << "    cnt = _vamp_mcdc_val_offset[_vamp_mcdc_val_offset_index[i + 1]] - _vamp_mcdc_val_offset[_vamp_mcdc_val_offset_index[i]];\n";
-          out << "    _vamp_send(cnt >> 8);\n";
-          out << "    _vamp_send(cnt & 0xff);\n";
-
-          out << "    for (j = 0; j < cnt; ++j)\n";
-          out << "      _vamp_send(_vamp_mcdc_val_save[_vamp_mcdc_val_offset[_vamp_mcdc_val_offset_index[i]] + j]);\n";
-
-          // Output stack overflow status
-          out << "    _vamp_send((_vamp_mcdc_stack_overflow[i] >> 8) & 0xff);\n";
-          out << "    _vamp_send(_vamp_mcdc_stack_overflow[i] & 0xff);\n";
-        }
-        out << "  }\n";
     }
+
+    out << "void _vamp_output()\n{\n";
+    out << "  int i, j, cnt;\n\n";
+    out << "  for (i = 0; i < " << fileList.size() << "; ++i)\n";
+    out << "  {\n";
+    out << "    for (j = 0; _vamp_filenames[i][j]; ++j)\n";
+    out << "      _vamp_send(_vamp_filenames[i][j]);\n";
+    out << "    _vamp_send(0);\n\n";
+
+    // Insert instrumentation data output routine
+    int opts = (vcData.doStmtSingle ? DO_STATEMENT_SINGLE : 0) |
+                         (vcData.doStmtCount ? DO_STATEMENT_COUNT : 0) |
+                         (vcData.doBranch ? DO_BRANCH : 0) |
+                         (vcData.doMCDC ? DO_MCDC : 0) |
+                         (vcData.doCC ? DO_CONDITION : 0);
+    //char optsStr[8];
+    //sprintf(optsStr, "%#02x", opts);
+    out << "    _vamp_send(" << opts << ");\n\n";
+    if (vcData.doStmtSingle || vcData.doBranch)
+    {
+        out << "    cnt = _vamp_stmt_index[i + 1] - _vamp_stmt_index[i];\n";
+        // Output instrumented statement data
+        out << "    _vamp_send(cnt >> 8);\n";
+        out << "    _vamp_send(cnt & 0xff);\n";
+        out << "    for (j = _vamp_stmt_index[i]; j < _vamp_stmt_index[i + 1]; ++j)\n";
+        out << "      _vamp_send(_vamp_stmt_array[j]);\n";
+    }
+    else
+    // FIXME: Is " || vcData.doBranch" needed here?
+    if (vcData.doStmtCount)
+    {
+        out << "    cnt = _vamp_stmt_index[i + 1] - _vamp_stmt_index[i];\n";
+        // Output instrumented statement data
+        out << "    _vamp_send(cnt >> 8);\n";
+        out << "    _vamp_send(cnt & 0xff);\n";
+        out << "    for (j = _vamp_stmt_index[i]; j < _vamp_stmt_index[i + 1]; ++j)\n";
+        out << "    {\n";
+        out << "      _vamp_send(_vamp_stmt_array[j] >> 24);\n";
+        out << "      _vamp_send(_vamp_stmt_array[j] >> 16) & 0xff);\n";
+        out << "      _vamp_send(_vamp_stmt_array[j] >> 8) & 0xff);\n";
+        out << "      _vamp_send(_vamp_stmt_array[j] & 0xff);\n";
+        out << "    }\n";
+    }
+
+    if (vcData.doBranch)
+    {
+        out << "    cnt = _vamp_branch_index[i + 1] - _vamp_branch_index[i];\n";
+        // Output instrumented branch data
+        out << "    _vamp_send(cnt >> 8);\n";
+        out << "    _vamp_send(cnt & 0xff);\n";
+        out << "    for (j = _vamp_branch_index[i]; j < _vamp_branch_index[i + 1]; ++j)\n";
+        out << "      _vamp_send(_vamp_branch_array[j]);\n";
+    }
+
+    if (vcData.doCC)
+    {
+        out << "    cnt = _vamp_cond_index[i + 1] - _vamp_cond_index[i];\n";
+        // Output instrumented condition data
+        out << "    _vamp_send(cnt >> 8);\n";
+        out << "    _vamp_send(cnt & 0xff);\n";
+        out << "    for (j = _vamp_cond_index[i]; j < _vamp_cond_index[i + 1]; ++j)\n";
+        out << "      _vamp_send(_vamp_cond_array[j]);\n";
+    }
+
+    if (vcData.doMCDC)
+    {
+//          out << "    cnt = _vamp_mcdc_index[i + 1] - _vamp_mcdc_index[i];\n";
+        out << "    cnt = _vamp_mcdc_val_offset[_vamp_mcdc_val_offset_index[i + 1]] - _vamp_mcdc_val_offset[_vamp_mcdc_val_offset_index[i]];\n";
+      out << "    _vamp_send(cnt >> 8);\n";
+      out << "    _vamp_send(cnt & 0xff);\n";
+
+      out << "    for (j = 0; j < cnt; ++j)\n";
+      out << "      _vamp_send(_vamp_mcdc_val_save[_vamp_mcdc_val_offset[_vamp_mcdc_val_offset_index[i]] + j]);\n";
+
+      // Output stack overflow status
+      out << "    _vamp_send((_vamp_mcdc_stack_overflow[i] >> 8) & 0xff);\n";
+      out << "    _vamp_send(_vamp_mcdc_stack_overflow[i] & 0xff);\n";
+    }
+    out << "  }\n";
 
 #endif
 
@@ -3811,8 +3812,9 @@ void MainWindow::on_action_About_triggered()
 {
     QMessageBox::about(this, tr("About Vamp"),
              tr("<center><h1>Vamp Version 2.10</h1><nb>"
-                "<h3>Copyright 2014, IntegrityV</h3><nb>"
-                "<h3>All Rights Reserved</h3></center>"));
+                "<h3>Copyright 2016, Robert Ankeney</h3><nb>"
+                "<h3>Licensed Under LGPLv3</h3><nb>"
+                "<h3>See LICENSE.txt for Details</h3></center>"));
 }
 
 void MainWindow::on_forwardPushButton_clicked()

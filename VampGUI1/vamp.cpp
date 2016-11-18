@@ -2125,7 +2125,11 @@ Expr *MyRecursiveASTVisitor::VisitBinaryOperator(BinaryOperator *E)
           rhsMinLine, rhsMinCol,
           rhsMaxLine, rhsMaxCol;
       GetTokStartPos(E->getLHS(), &lhsMinLine, &lhsMinCol);
-      GetTokEndPos(E->getLHS(), &lhsMaxLine, &lhsMaxCol);
+      // FIXME - lhsMaxCol returned the same as lhsMinCol with clang 3.7!
+//      Should work: GetTokEndPos(E->getLHS(), &lhsMaxLine, &lhsMaxCol);
+      SourceLocation end = GetLocAfter(E->getLHS()->getLocEnd());
+      GetTokPos(end, &lhsMaxLine, &lhsMaxCol);
+
       GetTokStartPos(E->getRHS(), &rhsMinLine, &rhsMinCol);
       GetTokEndPos(E->getRHS(), &rhsMaxLine, &rhsMaxCol);
 

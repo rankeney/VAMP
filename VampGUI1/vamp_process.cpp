@@ -3332,93 +3332,96 @@ CDBG << "Adding mcdcInfo[" << k << "] = " << v << ENDL;
 
       // Walk through possible MC/DC combinations (both TRUE and FALSE)
       // till we find a match for the result
-      int expr;
-      for (expr = mcdcOpCnt[mcdcExprNum];
-                hist.mcdcInfo[expr] && (expr < mcdcOpCnt[mcdcExprNum + 1]);
-                  expr += mcdcByteCnt[mcdcExprNum])
+      if (hist.mcdcCount)
       {
-        if (db.combineHistory && (expr == newOffset))
-        {
-          // Save results for expressions covered in previous runs
-          gotOldTrue = gotTrue;
-          gotOldFalse = gotFalse;
-        }
-
-        unsigned int mcdcVal = hist.mcdcInfo[expr] >> 1;
-#ifdef VAMP_DEBUG_MCDC
-        char v[256];
-        for (int j = 0; j < mcdcByteCnt[mcdcExprNum]; j++)
-        {
-          sprintf(v, "%#x\n", hist.mcdcInfo[expr + j]);
-            CDBG << "mcdcVal[" << j << "] = " << v;
-        }
-#endif
-        // Use top 7 bits of mcdcInfo[expr], followed by 8 bits
-        // of following mcdcInfo bytes
-        int whichByte = 0;
-        int whichBit = 7;
-
-/*
-        if (mcdcByteCnt[mcdcExprNum] == 2)
-          mcdcVal |= hist.mcdcInfo[expr + 1];
-*/
-        string mcdcStr;
-        for (int cnt = 0; cnt < operandCnt; cnt++)
-        {
-          mcdcStr += (char) ('0' | (mcdcVal & 1));
-          if (--whichBit)
+          int expr;
+          for (expr = mcdcOpCnt[mcdcExprNum];
+                    hist.mcdcInfo[expr] && (expr < mcdcOpCnt[mcdcExprNum + 1]);
+                      expr += mcdcByteCnt[mcdcExprNum])
           {
-            mcdcVal >>= 1;
-          }
-          else
-          {
-            whichBit = 8;
-            ++whichByte;
-            mcdcVal = hist.mcdcInfo[expr + whichByte];
-          }
-        }
-
-        int which = checkMatch(mcdcStr, falseStr);
-        if (which != -1)
-        {
-#ifdef VAMP_DEBUG_MCDC
-          CDBG << mcdcStr << " matches FALSE " << falseStr[which] << ENDL;
-//FIXME - which can be > MAX_BITSET!
-if (which > MAX_BITSET)
-CDBG << "False too big: " << which << ", size = " << falseStr.size() << ENDL;
-#endif
-          gotFalse.set(which);
-          if (db.combineHistory && (expr >= newOffset))
-          {
-            // Save results for expressions covered in current run
-            gotNewFalse.set(which);
-          }
-        }
-        else
-        {
-          which = checkMatch(mcdcStr, trueStr);
-          if (which != -1)
-          {
-#ifdef VAMP_DEBUG_MCDC
-            CDBG << mcdcStr << " matches TRUE  " << trueStr[which] << ENDL;
-//FIXME - which can be > MAX_BITSET!
-if (which > MAX_BITSET)
-CDBG << "True too big: " << which << ENDL;
-#endif
-            gotTrue.set(which);
-            if (db.combineHistory && (expr >= newOffset))
+            if (db.combineHistory && (expr == newOffset))
             {
-              // Save results for expressions covered in current run
-              gotNewTrue.set(which);
+              // Save results for expressions covered in previous runs
+              gotOldTrue = gotTrue;
+              gotOldFalse = gotFalse;
+            }
+
+            unsigned int mcdcVal = hist.mcdcInfo[expr] >> 1;
+    #ifdef VAMP_DEBUG_MCDC
+            char v[256];
+            for (int j = 0; j < mcdcByteCnt[mcdcExprNum]; j++)
+            {
+              sprintf(v, "%#x\n", hist.mcdcInfo[expr + j]);
+                CDBG << "mcdcVal[" << j << "] = " << v;
+            }
+    #endif
+            // Use top 7 bits of mcdcInfo[expr], followed by 8 bits
+            // of following mcdcInfo bytes
+            int whichByte = 0;
+            int whichBit = 7;
+
+    /*
+            if (mcdcByteCnt[mcdcExprNum] == 2)
+              mcdcVal |= hist.mcdcInfo[expr + 1];
+    */
+            string mcdcStr;
+            for (int cnt = 0; cnt < operandCnt; cnt++)
+            {
+              mcdcStr += (char) ('0' | (mcdcVal & 1));
+              if (--whichBit)
+              {
+                mcdcVal >>= 1;
+              }
+              else
+              {
+                whichBit = 8;
+                ++whichByte;
+                mcdcVal = hist.mcdcInfo[expr + whichByte];
+              }
+            }
+
+            int which = checkMatch(mcdcStr, falseStr);
+            if (which != -1)
+            {
+    #ifdef VAMP_DEBUG_MCDC
+              CDBG << mcdcStr << " matches FALSE " << falseStr[which] << ENDL;
+    //FIXME - which can be > MAX_BITSET!
+    if (which > MAX_BITSET)
+    CDBG << "False too big: " << which << ", size = " << falseStr.size() << ENDL;
+    #endif
+              gotFalse.set(which);
+              if (db.combineHistory && (expr >= newOffset))
+              {
+                // Save results for expressions covered in current run
+                gotNewFalse.set(which);
+              }
+            }
+            else
+            {
+              which = checkMatch(mcdcStr, trueStr);
+              if (which != -1)
+              {
+    #ifdef VAMP_DEBUG_MCDC
+                CDBG << mcdcStr << " matches TRUE  " << trueStr[which] << ENDL;
+    //FIXME - which can be > MAX_BITSET!
+    if (which > MAX_BITSET)
+    CDBG << "True too big: " << which << ENDL;
+    #endif
+                gotTrue.set(which);
+                if (db.combineHistory && (expr >= newOffset))
+                {
+                  // Save results for expressions covered in current run
+                  gotNewTrue.set(which);
+                }
+              }
+    #ifdef VAMP_DEBUG_MCDC
+              else
+              {
+                CDBG << mcdcStr << " - no matches found!" << ENDL;
+              }
+    #endif
             }
           }
-#ifdef VAMP_DEBUG_MCDC
-          else
-          {
-            CDBG << mcdcStr << " - no matches found!" << ENDL;
-          }
-#endif
-        }
       }
 
 #ifdef VAMP_DEBUG_MCDC
@@ -4225,7 +4228,7 @@ void VampProcess::genHTML(string htmlName)
     {
       if (mcdcFunctionOperandCount[i])
       {
-        int coveragePercent = (1000 * mcdcFunctionCoverageCount[i] / 
+        int coveragePercent = (1000 * mcdcFunctionCoverageCount[i] /
                                       mcdcFunctionOperandCount[i] + 5) / 10;
 
         htmlFile << htmlPercentageStyle(db.functionInfo[i].function +
@@ -4269,7 +4272,7 @@ void VampProcess::genHTML(string htmlName)
     {
       if (mcdcTotalOperandCount)
       {
-        int coveragePercent = (1000 * mcdcNewCoverCount / 
+        int coveragePercent = (1000 * mcdcNewCoverCount /
                                       mcdcTotalOperandCount + 5) / 10;
 
         htmlFile << htmlPercentageStyle("new_mcdc_percent", coveragePercent);
@@ -4297,7 +4300,7 @@ void VampProcess::genHTML(string htmlName)
 
   vrptFile << "  \"mcdc_stack_overflow\": ";
 
-  if (doMCDC && hist.stackOverflow)
+  if (doMCDC && hist.mcdcCount && hist.stackOverflow)
   {
     mcdcOpInfoType firstOperand =
             db.mcdcExprInfo[hist.stackOverflow - 1].opInfo.front();
